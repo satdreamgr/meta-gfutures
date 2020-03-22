@@ -31,7 +31,6 @@ MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS = "\
 	kernel-module-mt7601u \
 	kernel-module-r8712u \
 	kernel-module-r8723au \
-	kernel-module-r8188eu \
 	kernel-module-rt2500usb \
 	kernel-module-rt2800usb \
 	kernel-module-rt73usb \

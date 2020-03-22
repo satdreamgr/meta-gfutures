@@ -4,7 +4,9 @@ PRIORITY = "required"
 LICENSE = "CLOSED"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 PV = "${SRCDATE}"
-DEPENDS = "libdrm mesa patchelf-native"
+DEPENDS = "libdrm patchelf-native"
+# XXX mesa requires... modifed DISTRO_FEATURES :-/
+DEPENDS_append_hd51 = " hd-v3ddriver-headers"
 
 
 PROVIDES = "virtual/libgles2 virtual/libgles1 virtual/egl virtual/libgbm"
