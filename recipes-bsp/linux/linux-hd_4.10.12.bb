@@ -7,7 +7,7 @@ COMPATIBLE_MACHINE = "hd+|vs+|bre2ze4k"
 
 inherit kernel machine_kernel_pr
 
-MACHINE_KERNEL_PR_append = ".1"
+MACHINE_KERNEL_PR_append = ".3"
 
 SRC_URI[mips.md5sum] = "3c42df14db9d12041802f4c8fec88e17"
 SRC_URI[mips.sha256sum] = "738896d2682211d2079eeaa1c7b8bdd0fe75eb90cd12dff2fc5aeb3cc02562bc"
@@ -26,14 +26,16 @@ RPROVIDES_kernel-image = "kernel-image-${KERNEL_VERSION}"
 
 SRC_URI += "http://downloads.mutant-digital.net/linux-${PV}-${ARCH}.tar.gz;name=${ARCH} \
 	file://defconfig \
-	"
+	file://initramfs-subdirboot.cpio.gz;unpack=0 \
+"
 
 SRC_URI_append_arm = " \
-	file://findkerneldevice.py \
+	file://findkerneldevice.sh \
 	file://reserve_dvb_adapter_0.patch \
 	file://blacklist_mmc0.patch \
 	file://export_pmpoweroffprepare.patch \
-	"
+	file://enable_hauppauge_solohd.patch \
+"
 
 S = "${WORKDIR}/linux-${PV}"
 
@@ -41,22 +43,16 @@ export OS = "Linux"
 KERNEL_OBJECT_SUFFIX = "ko"
 
 # MIPSEL
-
-FILES_kernel-image = "${KERNEL_IMAGEDEST}/${KERNEL_IMAGETYPE}"
-
 KERNEL_IMAGETYPE_mipsel = "vmlinux.gz"
 KERNEL_OUTPUT_DIR_mipsel = "."
 KERNEL_IMAGEDEST_mipsel = "tmp"
 KERNEL_CONSOLE_mipsel = "null"
 SERIAL_CONSOLE_mipsel ?= ""
 
+KERNEL_EXTRA_ARGS_mipsel = "EXTRA_CFLAGS=-Wno-attribute-alias"
+
 # Replaced by kernel_output_dir
 KERNEL_OUTPUT_mipsel = "vmlinux.gz"
-
-kernel_do_install_append_mipsel() {
-        install -d ${D}/${KERNEL_IMAGEDEST}
-        install -m 0755 ${KERNEL_OUTPUT} ${D}/${KERNEL_IMAGEDEST}
-}
 
 pkg_postinst_kernel-image_mipsel() {
 	if [ "x$D" == "x" ]; then
@@ -69,23 +65,26 @@ pkg_postinst_kernel-image_mipsel() {
 }
 
 # ARM
-
 KERNEL_OUTPUT_arm = "arch/${ARCH}/boot/${KERNEL_IMAGETYPE}"
 KERNEL_IMAGETYPE_arm = "zImage"
 KERNEL_IMAGEDEST_arm = "tmp"
 
-FILES_kernel-image_arm = "/${KERNEL_IMAGEDEST}/${KERNEL_IMAGETYPE} /${KERNEL_IMAGEDEST}/findkerneldevice.py"
+FILES_kernel-image_arm = "/${KERNEL_IMAGEDEST}/findkerneldevice.sh"
+
+kernel_do_configure_prepend_arm() {
+	install -d ${B}/usr
+	install -m 0644 ${WORKDIR}/initramfs-subdirboot.cpio.gz ${B}/
+}
 
 kernel_do_install_append_arm() {
-        install -d ${D}/${KERNEL_IMAGEDEST}
-        install -m 0755 ${KERNEL_OUTPUT} ${D}/${KERNEL_IMAGEDEST}
-	install -m 0755 ${WORKDIR}/findkerneldevice.py ${D}/${KERNEL_IMAGEDEST}
+	install -d ${D}/${KERNEL_IMAGEDEST}
+	install -m 0755 ${WORKDIR}/findkerneldevice.sh ${D}/${KERNEL_IMAGEDEST}
 }
 
 pkg_postinst_kernel-image_arm() {
 	if [ "x$D" == "x" ]; then
 		if [ -f /${KERNEL_IMAGEDEST}/${KERNEL_IMAGETYPE} ] ; then
-			python /${KERNEL_IMAGEDEST}/findkerneldevice.py
+			/${KERNEL_IMAGEDEST}/./findkerneldevice.sh
 			dd if=/${KERNEL_IMAGEDEST}/${KERNEL_IMAGETYPE} of=/dev/kernel
 		fi
 	fi
